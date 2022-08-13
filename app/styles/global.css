@@ -1,0 +1,44 @@
+* {
+  box-sizing: border-box;
+}
+
+.field.error {
+  border: 1px solid red;
+}
+
+.field {
+  width: 100%;
+}
+
+.label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 8px;
+}
+
+.field-row-item {
+  min-width: calc(50% - 4px);
+  width: min-content;
+}
+
+.fields-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.form {
+  width: min(100%, 500px);
+  padding: 16px;
+  margin: auto;
+}
+
+.error-message {
+  color: red;
+}
