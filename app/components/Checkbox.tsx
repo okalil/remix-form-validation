@@ -5,7 +5,7 @@ interface Props extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-export function Input({ label, style, className, error, ...props }: Props) {
+export function Checkbox({ label, style, className, error, ...props }: Props) {
   const id = useId();
 
   let labelText = label;
@@ -16,15 +16,13 @@ export function Input({ label, style, className, error, ...props }: Props) {
 
   return (
     <div style={style} className={className}>
-      <label htmlFor={id} className="label">
-        {labelText}
-      </label>
       <input
         {...props}
         id={id}
-        className={`field ${error && 'error'}`}
-        autoFocus={Boolean(error)}
+        className={`${error && 'error'}`}
+        type="checkbox"
       />
+      <label htmlFor={id}>{labelText}</label>
       {error && <span className="error-message">{error}</span>}
     </div>
   );

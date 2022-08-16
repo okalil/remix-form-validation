@@ -1,11 +1,11 @@
-import { InputHTMLAttributes, useId } from 'react';
+import { TextareaHTMLAttributes, useId } from 'react';
 
-interface Props extends InputHTMLAttributes<HTMLInputElement> {
+interface Props extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
   error?: string;
 }
 
-export function Input({ label, style, className, error, ...props }: Props) {
+export function Textarea({ label, style, className, error, ...props }: Props) {
   const id = useId();
 
   let labelText = label;
@@ -19,12 +19,7 @@ export function Input({ label, style, className, error, ...props }: Props) {
       <label htmlFor={id} className="label">
         {labelText}
       </label>
-      <input
-        {...props}
-        id={id}
-        className={`field ${error && 'error'}`}
-        autoFocus={Boolean(error)}
-      />
+      <textarea {...props} id={id} className={`field ${error && 'error'}`} />
       {error && <span className="error-message">{error}</span>}
     </div>
   );
