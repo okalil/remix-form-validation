@@ -8,8 +8,10 @@ import {
 } from '@remix-run/react';
 import type { MetaFunction } from '@remix-run/node';
 
+import styles from '~/styles/global.css';
+
 export const meta: MetaFunction = () => {
-  return { title: 'New Remix App' };
+  return { title: 'Validação de Forms' };
 };
 
 export default function App() {
@@ -19,6 +21,8 @@ export default function App() {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <Meta />
+
+        <link rel="stylesheet" href={styles} />
         <Links />
       </head>
       <body>
