@@ -1,7 +1,8 @@
-import type {
+import {
   ActionFunction,
   LinksFunction,
   MetaFunction,
+  redirect,
 } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import type { FormEventHandler, FocusEventHandler } from 'react';
@@ -13,6 +14,11 @@ import { Input } from '~/components/Input';
 import { Radio } from '~/components/Radio';
 import { Select } from '~/components/Select';
 import { Textarea } from '~/components/Textarea';
+import {
+  type AnnounceForm,
+  validationSchema,
+  getErrorsMessages,
+} from '~/services/validation';
 
 import styles from '~/styles/anunciar.css';
 
@@ -22,69 +28,61 @@ export const meta: MetaFunction = () => ({
 
 export const links: LinksFunction = () => [{ href: styles, rel: 'stylesheet' }];
 
-export const action: ActionFunction = async a => {
-  const formData = await a.request.formData();
-  const errors: AnnounceFormErrors = {};
-
-  const data = Object.fromEntries(formData);
-
-  if (!data.title) errors.title = 'Campo obrigatório';
-
-  if (Object.values(errors).some(Boolean)) {
-    return errors;
-  }
-
-  return {};
-};
-
 export default function AnnounceFormExample() {
-  const actionErrors = useActionData<AnnounceFormErrors>();
-  const [errors, setErrors] = useState<AnnounceFormErrors>(actionErrors || {});
+  const actionData = useActionData();
+  const [errors, setErrors] = useState<AnnounceFormErrors>(actionData?.errors);
 
-  // Sync action errors with client state
-  useEffect(() => actionErrors && setErrors(actionErrors), [actionErrors]);
+  // // Sync action errors with client state
+  // useEffect(
+  //   () => actionData?.errors && setErrors(actionData.errors),
+  //   [actionData?.errors]
+  // );
 
-  const setError = (name: string, value: string) => {
-    const prevError = errors[name];
+  const setErrorByName = (name: string, value: string) => {
+    const prevError = errors?.[name];
     if (prevError !== value) setErrors(state => ({ ...state, [name]: value }));
   };
 
   const validate: FocusEventHandler<FormControl> = e => {
     const input = e.currentTarget;
-    const message = getErrorMessage(input, {
-      tooShort: 'Você não atingiu o número de caracteres mínimo requisitados.',
-      tooLong: 'Você ultrapassou o número de caracteres máximo requisitados.',
-    });
-    setError(input.name, message);
-  };
 
-  const validateAll = (inputs: FormControl[]) => {
-    let messages: AnnounceFormErrors = {};
-    inputs
-      .filter(input => !input.checkValidity())
-      .forEach((input, i) => {
-        if (i === 0) input.focus();
-        messages[input.name] = getErrorMessage(input, {
-          tooShort:
-            'Você não atingiu o número de caracteres mínimo requisitados.',
-          tooLong:
-            'Você ultrapassou o número de caracteres máximo requisitados.',
-        });
-      });
-    setErrors(messages);
+    const name = input.name as keyof AnnounceForm;
+    const parseResult = validationSchema.shape[name]?.safeParse(input.value);
+
+    let message = '';
+    if (!parseResult.success) {
+      message = parseResult.error.issues[0].message;
+    }
+    setErrorByName(input.name, message);
   };
 
   const onSubmit: FormEventHandler<HTMLFormElement> = e => {
     const form = e.currentTarget;
-    if (!form.checkValidity()) {
-      validateAll(Array.from(form) as FormControl[]);
+    const formData = new FormData(form);
+
+    let values: Record<string, any> = {};
+    for (let element of Array.from<any>(form)) {
+      if (!element.name) continue;
+      values[element.name] = formData.get(element.name);
+    }
+    const parseResult = validationSchema.safeParse(values);
+
+    if (!parseResult.success) {
+      const parseErrors = getErrorsMessages(parseResult);
+      setErrors(parseErrors);
+
       e.preventDefault();
     }
   };
 
   return (
     <div>
-      <Form method="post" className="form" onSubmit={onSubmit} noValidate>
+      <Form
+        method="post"
+        encType="multipart/form-data"
+        className="form"
+        onSubmit={onSubmit}
+      >
         <h1>Anunciar</h1>
 
         <section>
@@ -92,31 +90,41 @@ export default function AnnounceFormExample() {
           <Input
             name="title"
             label="Título"
-            required
-            error={errors.title}
+            error={errors?.title}
             onBlur={validate}
+            defaultValue={actionData?.values.title}
           />
           <Textarea
             name="description"
             label="Descrição"
-            minLength={20}
-            maxLength={200}
-            required
-            error={errors.description}
+            error={errors?.description}
             onBlur={validate}
+            defaultValue={actionData?.values.description}
           />
 
-          <Fieldset legend="Condição" error={errors.condition}>
-            <Radio name="condition" label="Novo" value="novo" required />
-            <Radio name="condition" label="Usado" value="usado" />
+          <Fieldset legend="Condição" error={errors?.condition}>
+            <Radio
+              name="condition"
+              label="Novo"
+              value="novo"
+              defaultChecked={actionData?.values.condition === 'novo'}
+            />
+            <Radio
+              name="condition"
+              label="Usado"
+              value="usado"
+              defaultChecked={actionData?.values.condition === 'usado'}
+            />
           </Fieldset>
+
+          <input type="file" name="images" multiple />
 
           <Select
             name="state"
             label="Estado"
-            required
-            error={errors.state}
+            error={errors?.state}
             onBlur={validate}
+            defaultValue={actionData?.values.state}
           />
         </section>
 
@@ -125,27 +133,31 @@ export default function AnnounceFormExample() {
           <Input
             name="name"
             label="Nome"
-            required
-            error={errors.name}
+            error={errors?.name}
             onBlur={validate}
+            defaultValue={actionData?.values.name}
           />
           <Input
             name="email"
             type="email"
             label="Email"
-            required
-            error={errors.email}
+            error={errors?.email}
             onBlur={validate}
+            defaultValue={actionData?.values.email}
           />
           <Input
             name="phone"
             type="tel"
             label="Telefone"
-            required
-            error={errors.phone}
             onBlur={validate}
+            error={errors?.phone}
+            defaultValue={actionData?.values.phone}
           />
-          <Checkbox name="hide_phone" label="Ocultar telefone neste anúncio" />
+          <Checkbox
+            name="hide_phone"
+            label="Ocultar telefone neste anúncio"
+            defaultChecked={actionData?.values.hide_phone === 'on'}
+          />
         </section>
 
         <button>Publicar</button>
@@ -154,37 +166,27 @@ export default function AnnounceFormExample() {
   );
 }
 
-function getErrorMessage(input: FormControl, map: ValidityStateMap): string {
-  const { validity, validationMessage } = input;
-  let state = '';
-  for (let key in validity) {
-    if (validity[key as keyof ValidityState]) {
-      state = key;
-      break;
-    }
+export const action: ActionFunction = async a => {
+  const formData = await a.request.formData();
+
+  const payload = Object.fromEntries(
+    formData.entries()
+  ) as Partial<AnnounceForm>;
+  // payload.images = formData.getAll('images') as File[];
+
+  const validated = validationSchema.safeParse(payload);
+
+  if (!validated.success) {
+    const errors = getErrorsMessages(validated);
+    return { values: payload, errors };
   }
-  return (state && map[state as keyof ValidityState]) || validationMessage;
-}
 
-interface AnnounceForm {
-  title: string;
-  description: string;
-  condition: 'novo' | 'usado';
-  images: File[];
-  state: string;
-  city: string;
-
-  name: string;
-  email: string;
-  phone: string;
-  hide_phone: boolean;
-}
+  return redirect('/sucesso');
+};
 
 type AnnounceFormErrors = { [K in keyof AnnounceForm]?: string } & {
   [key: string]: string;
 };
-
-type ValidityStateMap = { [K in keyof ValidityState]?: string };
 
 type FormControl =
   | HTMLInputElement
