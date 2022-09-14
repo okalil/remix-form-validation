@@ -6,7 +6,7 @@ import {
 } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import type { FormEventHandler, FocusEventHandler } from 'react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Checkbox } from '~/components/Checkbox';
 import { Fieldset } from '~/components/Fieldset';
@@ -16,8 +16,10 @@ import { Select } from '~/components/Select';
 import { Textarea } from '~/components/Textarea';
 import {
   type AnnounceForm,
+  type AnnounceFormErrors,
   validationSchema,
-  getErrorsMessages,
+  getAnnounceFormData,
+  getAnnounceFormErrors,
 } from '~/services/validation';
 
 import styles from '~/styles/anunciar.css';
@@ -32,18 +34,14 @@ export default function AnnounceFormExample() {
   const actionData = useActionData();
   const [errors, setErrors] = useState<AnnounceFormErrors>(actionData?.errors);
 
-  // // Sync action errors with client state
-  // useEffect(
-  //   () => actionData?.errors && setErrors(actionData.errors),
-  //   [actionData?.errors]
-  // );
-
   const setErrorByName = (name: string, value: string) => {
     const prevError = errors?.[name];
     if (prevError !== value) setErrors(state => ({ ...state, [name]: value }));
   };
 
-  const validate: FocusEventHandler<FormControl> = e => {
+  const validate: FocusEventHandler<
+    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+  > = e => {
     const input = e.currentTarget;
 
     const name = input.name as keyof AnnounceForm;
@@ -56,22 +54,26 @@ export default function AnnounceFormExample() {
     setErrorByName(input.name, message);
   };
 
-  const onSubmit: FormEventHandler<HTMLFormElement> = e => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = e => {
     const form = e.currentTarget;
     const formData = new FormData(form);
+    const values = getAnnounceFormData(formData);
 
-    let values: Record<string, any> = {};
-    for (let element of Array.from<any>(form)) {
-      if (!element.name) continue;
-      values[element.name] = formData.get(element.name);
-    }
     const parseResult = validationSchema.safeParse(values);
 
     if (!parseResult.success) {
-      const parseErrors = getErrorsMessages(parseResult);
+      // Prevent Submit And Set Errors
+      e.preventDefault();
+      const parseErrors = getAnnounceFormErrors(parseResult);
       setErrors(parseErrors);
 
-      e.preventDefault();
+      // Focus First Input With Error
+      const [firstInputName] = Object.keys(parseErrors);
+      const firstInput = form[firstInputName];
+
+      if (firstInput instanceof HTMLElement) {
+        firstInput.focus();
+      }
     }
   };
 
@@ -81,7 +83,7 @@ export default function AnnounceFormExample() {
         method="post"
         encType="multipart/form-data"
         className="form"
-        onSubmit={onSubmit}
+        onSubmit={handleSubmit}
       >
         <h1>Anunciar</h1>
 
@@ -117,7 +119,8 @@ export default function AnnounceFormExample() {
             />
           </Fieldset>
 
-          <input type="file" name="images" multiple />
+          <input type="file" name="images[]" id="upload" multiple />
+          {errors?.images && <span>{errors.images}</span>}
 
           <Select
             name="state"
@@ -125,8 +128,19 @@ export default function AnnounceFormExample() {
             error={errors?.state}
             onBlur={validate}
             defaultValue={actionData?.values.state}
-          />
+          >
+            <option value="to">Tocantins</option>
+            <option value="sp">São Paulo</option>
+          </Select>
         </section>
+
+        <Input
+          name="city"
+          label="Cidade"
+          error={errors?.city}
+          onBlur={validate}
+          defaultValue={actionData?.values.city}
+        />
 
         <section>
           <h2>Dados para contato</h2>
@@ -160,7 +174,7 @@ export default function AnnounceFormExample() {
           />
         </section>
 
-        <button>Publicar</button>
+        <button type="submit">Publicar</button>
       </Form>
     </div>
   );
@@ -169,27 +183,14 @@ export default function AnnounceFormExample() {
 export const action: ActionFunction = async a => {
   const formData = await a.request.formData();
 
-  const payload = Object.fromEntries(
-    formData.entries()
-  ) as Partial<AnnounceForm>;
-  // payload.images = formData.getAll('images') as File[];
+  const payload = getAnnounceFormData(formData);
 
   const validated = validationSchema.safeParse(payload);
 
   if (!validated.success) {
-    const errors = getErrorsMessages(validated);
+    const errors = getAnnounceFormErrors(validated);
     return { values: payload, errors };
   }
 
   return redirect('/sucesso');
 };
-
-type AnnounceFormErrors = { [K in keyof AnnounceForm]?: string } & {
-  [key: string]: string;
-};
-
-type FormControl =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement
-  | HTMLButtonElement;

@@ -1,13 +1,4 @@
-import { object, SafeParseError, z } from 'zod';
-
-function recursive(obj: any, path: (string | number)[]) {
-  let count = 0;
-  let source = obj;
-  while (count < path.length) {
-    source = source[path[count]];
-    count++;
-  }
-}
+import { SafeParseError, z } from 'zod';
 
 export const validationSchema = z.object({
   title: z.string().refine(Boolean, { message: 'Preencha esse campo' }),
@@ -22,26 +13,34 @@ export const validationSchema = z.object({
   condition: z.enum(['novo', 'usado'], {
     errorMap: () => ({ message: 'Selecione uma das opções' }),
   }),
-  // images: z.array(z.instanceof(File)),
-  // state: z.string(),
-  // city: z.string(),
+  images: z.array(z.instanceof(File), {
+    errorMap: () => ({ message: 'Insira imagens válidas' }),
+  }),
+  state: z.string().refine(Boolean, { message: 'Preencha seu estado' }),
+  city: z.string().refine(Boolean, { message: 'Preencha sua cidade' }),
 
   name: z.string().refine(Boolean, { message: 'Preencha seu nome' }),
-  email: z.string().email(),
-  // phone: z.string(),
-  hide_phone: z.boolean().optional(),
+  email: z.string().email({ message: 'Insira um email válido' }),
+  phone: z.string().refine(Boolean, { message: 'Preencha seu telefone' }),
+  hide_phone: z.boolean().nullable().optional(),
 });
 
 export type AnnounceForm = z.infer<typeof validationSchema>;
 
-export function getErrorsMessages(safeParse: SafeParseError<AnnounceForm>) {
+export function getAnnounceFormData(formData: FormData) {
+  let payload: Partial<AnnounceForm> = Object.fromEntries(formData.entries());
+  payload.images = formData.getAll('images') as File[];
+  return payload;
+}
+
+export type AnnounceFormErrors = { [K in keyof AnnounceForm]?: string } & {
+  [key: string]: string;
+};
+
+export function getAnnounceFormErrors(safeParse: SafeParseError<AnnounceForm>) {
   const errors: AnnounceFormErrors = {};
   return safeParse.error.issues.reduce((res, e) => {
     res[e.path[0]] = e.message;
     return res;
   }, errors);
 }
-
-export type AnnounceFormErrors = { [K in keyof AnnounceForm]?: string } & {
-  [key: string]: string;
-};
