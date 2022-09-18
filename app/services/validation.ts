@@ -28,8 +28,9 @@ export const validationSchema = z.object({
 export type AnnounceForm = z.infer<typeof validationSchema>;
 
 export function getAnnounceFormData(formData: FormData) {
-  let payload: Partial<AnnounceForm> = Object.fromEntries(formData.entries());
-  payload.images = formData.getAll('images[]') as File[];
+  let payload: Record<string, unknown> = Object.fromEntries(formData.entries());
+  payload.hide_phone = payload.hide_phone === 'on';
+  payload.images = formData.getAll('images[]').filter(Boolean) as File[];
   return payload;
 }
 

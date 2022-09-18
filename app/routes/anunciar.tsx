@@ -14,16 +14,15 @@ import { Input } from '~/components/Input';
 import { Radio } from '~/components/Radio';
 import { Select } from '~/components/Select';
 import { Textarea } from '~/components/Textarea';
+import type { AnnounceForm, AnnounceFormErrors } from '~/services/validation';
 import {
-  type AnnounceForm,
-  type AnnounceFormErrors,
   validationSchema,
   getAnnounceFormData,
   getAnnounceFormErrors,
 } from '~/services/validation';
+import { phoneMask } from '~/utils/masks';
 
 import styles from '~/styles/anunciar.css';
-import { phoneMask } from '~/utils/masks';
 
 export const meta: MetaFunction = () => ({
   title: 'Anunciar',
@@ -79,108 +78,108 @@ export default function AnnounceFormExample() {
   };
 
   return (
-    <div>
-      <Form
-        method="post"
-        encType="multipart/form-data"
-        className="form"
-        onSubmit={handleSubmit}
-      >
-        <h1>Anunciar</h1>
+    <Form
+      method="post"
+      encType="multipart/form-data"
+      className="form"
+      onSubmit={handleSubmit}
+    >
+      <h1>Anunciar</h1>
 
-        <section>
-          <h2>Dados do produto</h2>
-          <Input
-            name="title"
-            label="Título"
-            error={errors?.title}
-            onBlur={validate}
-            defaultValue={actionData?.values.title}
-          />
-          <Textarea
-            name="description"
-            label="Descrição"
-            error={errors?.description}
-            onBlur={validate}
-            defaultValue={actionData?.values.description}
-          />
-
-          <Fieldset legend="Condição" error={errors?.condition}>
-            <Radio
-              name="condition"
-              label="Novo"
-              value="novo"
-              defaultChecked={actionData?.values.condition === 'novo'}
-              onBlur={validate}
-            />
-            <Radio
-              name="condition"
-              label="Usado"
-              value="usado"
-              defaultChecked={actionData?.values.condition === 'usado'}
-              onBlur={validate}
-            />
-          </Fieldset>
-
-          <input type="file" name="images[]" id="upload" multiple />
-          {errors?.images && <span>{errors.images}</span>}
-
-          <Select
-            name="state"
-            label="Estado"
-            error={errors?.state}
-            onBlur={validate}
-            defaultValue={actionData?.values.state}
-          >
-            <option value="to">Tocantins</option>
-            <option value="sp">São Paulo</option>
-          </Select>
-        </section>
-
+      <section>
+        <h2>Dados do produto</h2>
         <Input
-          name="city"
-          label="Cidade"
-          error={errors?.city}
+          name="title"
+          label="Título"
+          error={errors?.title}
           onBlur={validate}
-          defaultValue={actionData?.values.city}
+          defaultValue={actionData?.values.title}
+        />
+        <Textarea
+          name="description"
+          label="Descrição"
+          error={errors?.description}
+          onBlur={validate}
+          defaultValue={actionData?.values.description}
         />
 
-        <section>
-          <h2>Dados para contato</h2>
-          <Input
-            name="name"
-            label="Nome"
-            error={errors?.name}
+        <Fieldset legend="Condição" error={errors?.condition}>
+          <Radio
+            name="condition"
+            label="Novo"
+            value="novo"
+            defaultChecked={actionData?.values.condition === 'novo'}
             onBlur={validate}
-            defaultValue={actionData?.values.name}
           />
-          <Input
-            name="email"
-            type="email"
-            label="Email"
-            error={errors?.email}
+          <Radio
+            name="condition"
+            label="Usado"
+            value="usado"
+            defaultChecked={actionData?.values.condition === 'usado'}
             onBlur={validate}
-            defaultValue={actionData?.values.email}
           />
-          <Input
-            name="phone"
-            type="tel"
-            label="Telefone"
-            onChange={phoneMask.onChange}
-            onBlur={validate}
-            error={errors?.phone}
-            defaultValue={actionData?.values.phone && phoneMask.mask(actionData.values.phone)}
-          />
-          <Checkbox
-            name="hide_phone"
-            label="Ocultar telefone neste anúncio"
-            defaultChecked={actionData?.values.hide_phone === 'on'}
-          />
-        </section>
+        </Fieldset>
 
-        <button type="submit">Publicar</button>
-      </Form>
-    </div>
+        <input type="file" name="images[]" id="upload" multiple />
+        {errors?.images && <span>{errors.images}</span>}
+
+        <Select
+          name="state"
+          label="Estado"
+          error={errors?.state}
+          onBlur={validate}
+          defaultValue={actionData?.values.state}
+        >
+          <option value="to">Tocantins</option>
+          <option value="sp">São Paulo</option>
+        </Select>
+      </section>
+
+      <Input
+        name="city"
+        label="Cidade"
+        error={errors?.city}
+        onBlur={validate}
+        defaultValue={actionData?.values.city}
+      />
+
+      <section>
+        <h2>Dados para contato</h2>
+        <Input
+          name="name"
+          label="Nome"
+          error={errors?.name}
+          onBlur={validate}
+          defaultValue={actionData?.values.name}
+        />
+        <Input
+          name="email"
+          type="email"
+          label="Email"
+          error={errors?.email}
+          onBlur={validate}
+          defaultValue={actionData?.values.email}
+        />
+        <Input
+          name="phone"
+          type="tel"
+          label="Telefone"
+          onChange={phoneMask.onChange}
+          onBlur={validate}
+          error={errors?.phone}
+          defaultValue={
+            actionData?.values.phone && phoneMask.mask(actionData.values.phone)
+          }
+        />
+        <Checkbox
+          name="hide_phone"
+          label="Ocultar telefone neste anúncio"
+          defaultChecked={actionData?.values.hide_phone == 'on'}
+        />
+      </section>
+
+      <button type="submit">Publicar</button>
+    </Form>
   );
 }
 
