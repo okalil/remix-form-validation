@@ -23,6 +23,7 @@ import {
 } from '~/services/validation';
 
 import styles from '~/styles/anunciar.css';
+import { phoneMask } from '~/utils/masks';
 
 export const meta: MetaFunction = () => ({
   title: 'Anunciar',
@@ -165,9 +166,10 @@ export default function AnnounceFormExample() {
             name="phone"
             type="tel"
             label="Telefone"
+            onChange={phoneMask.onChange}
             onBlur={validate}
             error={errors?.phone}
-            defaultValue={actionData?.values.phone}
+            defaultValue={actionData?.values.phone && phoneMask.mask(actionData.values.phone)}
           />
           <Checkbox
             name="hide_phone"
