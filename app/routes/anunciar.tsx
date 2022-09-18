@@ -110,12 +110,14 @@ export default function AnnounceFormExample() {
               label="Novo"
               value="novo"
               defaultChecked={actionData?.values.condition === 'novo'}
+              onBlur={validate}
             />
             <Radio
               name="condition"
               label="Usado"
               value="usado"
               defaultChecked={actionData?.values.condition === 'usado'}
+              onBlur={validate}
             />
           </Fieldset>
 

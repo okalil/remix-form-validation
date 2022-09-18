@@ -29,7 +29,7 @@ export type AnnounceForm = z.infer<typeof validationSchema>;
 
 export function getAnnounceFormData(formData: FormData) {
   let payload: Partial<AnnounceForm> = Object.fromEntries(formData.entries());
-  payload.images = formData.getAll('images') as File[];
+  payload.images = formData.getAll('images[]') as File[];
   return payload;
 }
 
