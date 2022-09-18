@@ -43,32 +43,24 @@
   color: red;
 }
 
-datalist {
-  position: absolute;
-  max-height: 20em;
-  border: 0 none;
-  overflow-x: hidden;
-  overflow-y: auto;
+.btn {
+  background: purple;
+  color: #f4f4f4;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 8px;
 }
 
-datalist option {
-  font-size: 0.8em;
-  padding: 0.3em 1em;
-  background-color: #ccc;
-  cursor: pointer;
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 
-/* option active styles */
-datalist option:hover,
-datalist option:focus {
-  color: #fff;
-  background-color: #036;
-  outline: 0 none;
-}
-
-datalist option {
-  font-size: 1.8em;
-  padding: 0.3em 1em;
-  background-color: #ccc;
-  cursor: pointer;
+html,
+body {
+  font-family: sans-serif;
+  height: 100%;
 }
