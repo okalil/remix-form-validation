@@ -5,8 +5,7 @@ import {
   redirect,
 } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import { useRef, useEffect, ChangeEvent, FocusEvent } from 'react';
-import { useState } from 'react';
+import { useRef, useEffect } from 'react';
 
 import { Checkbox } from '~/components/Checkbox';
 import { Fieldset } from '~/components/Fieldset';
