@@ -5,7 +5,7 @@ import {
   redirect,
 } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import type { FormEventHandler, FocusEventHandler } from 'react';
+import { useRef, useEffect, ChangeEvent, FocusEvent } from 'react';
 import { useState } from 'react';
 
 import { Checkbox } from '~/components/Checkbox';
@@ -14,12 +14,10 @@ import { Input } from '~/components/Input';
 import { Radio } from '~/components/Radio';
 import { Select } from '~/components/Select';
 import { Textarea } from '~/components/Textarea';
-import type { AnnounceForm, AnnounceFormErrors } from '~/services/validation';
-import {
-  validationSchema,
-  getAnnounceFormData,
-  getAnnounceFormErrors,
-} from '~/services/validation';
+
+import { useFilesState } from '~/hooks/useFilesState';
+import { useErrors } from '~/hooks/useErrors';
+import { announceFormSchema, parseAnnounceForm } from '~/services/validation';
 import { phoneMask } from '~/utils/masks';
 
 import styles from '~/styles/anunciar.css';
@@ -32,57 +30,33 @@ export const links: LinksFunction = () => [{ href: styles, rel: 'stylesheet' }];
 
 export default function AnnounceFormExample() {
   const actionData = useActionData();
-  const [errors, setErrors] = useState<AnnounceFormErrors>(actionData?.errors);
 
-  const setErrorByName = (name: string, value: string) => {
-    const prevError = errors?.[name];
-    if (prevError !== value) setErrors(state => ({ ...state, [name]: value }));
-  };
+  const { errors, validateInput, validateForm } = useErrors(
+    announceFormSchema,
+    actionData?.errors
+  );
 
-  const validate: FocusEventHandler<
-    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-  > = e => {
-    const input = e.currentTarget;
+  const { files, appendFiles, deleteFile } = useFilesState();
 
-    const name = input.name as keyof AnnounceForm;
-    const parseResult = validationSchema.shape[name]?.safeParse(input.value);
+  const formRef = useRef<HTMLFormElement>(null);
 
-    let message = '';
-    if (!parseResult.success) {
-      message = parseResult.error.issues[0].message;
-    }
-    setErrorByName(input.name, message);
-  };
+  useEffect(() => {
+    /* append controlled files to form data */
+    formRef.current!.onformdata = e => {
+      e.formData.delete('images[]');
+      files.forEach(file => e.formData.append('images[]', file));
+    };
+  });
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = e => {
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const values = getAnnounceFormData(formData);
-
-    const parseResult = validationSchema.safeParse(values);
-
-    if (!parseResult.success) {
-      // Prevent Submit And Set Errors
-      e.preventDefault();
-      const parseErrors = getAnnounceFormErrors(parseResult);
-      setErrors(parseErrors);
-
-      // Focus First Input With Error
-      const [firstInputName] = Object.keys(parseErrors);
-      const firstInput = form[firstInputName];
-
-      if (firstInput instanceof HTMLElement) {
-        firstInput.focus();
-      }
-    }
-  };
+  const handleSubmit = validateForm(parseAnnounceForm);
 
   return (
     <Form
+      ref={formRef}
       method="post"
       encType="multipart/form-data"
-      className="form"
       onSubmit={handleSubmit}
+      className="form"
     >
       <h1>Anunciar</h1>
 
@@ -92,14 +66,14 @@ export default function AnnounceFormExample() {
           name="title"
           label="Título"
           error={errors?.title}
-          onBlur={validate}
+          onBlur={validateInput}
           defaultValue={actionData?.values.title}
         />
         <Textarea
           name="description"
           label="Descrição"
           error={errors?.description}
-          onBlur={validate}
+          onBlur={validateInput}
           defaultValue={actionData?.values.description}
         />
 
@@ -109,25 +83,43 @@ export default function AnnounceFormExample() {
             label="Novo"
             value="novo"
             defaultChecked={actionData?.values.condition === 'novo'}
-            onBlur={validate}
+            onBlur={validateInput}
           />
           <Radio
             name="condition"
             label="Usado"
             value="usado"
             defaultChecked={actionData?.values.condition === 'usado'}
-            onBlur={validate}
+            onBlur={validateInput}
           />
         </Fieldset>
 
-        <input type="file" name="images[]" id="upload" multiple />
+        {Boolean(files.length) && (
+          <ul>
+            {files.map(file => (
+              <li>
+                <img src={URL.createObjectURL(file)} style={{ height: 40 }} />
+                <button type="button" onClick={() => deleteFile(file.id)}>
+                  X
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <input
+          type="file"
+          name="images[]"
+          id="upload"
+          multiple
+          onChange={e => appendFiles(e.target.files)}
+        />
         {errors?.images && <span>{errors.images}</span>}
 
         <Select
           name="state"
           label="Estado"
           error={errors?.state}
-          onBlur={validate}
+          onBlur={validateInput}
           defaultValue={actionData?.values.state}
         >
           <option value="to">Tocantins</option>
@@ -139,7 +131,7 @@ export default function AnnounceFormExample() {
         name="city"
         label="Cidade"
         error={errors?.city}
-        onBlur={validate}
+        onBlur={validateInput}
         defaultValue={actionData?.values.city}
       />
 
@@ -149,7 +141,7 @@ export default function AnnounceFormExample() {
           name="name"
           label="Nome"
           error={errors?.name}
-          onBlur={validate}
+          onBlur={validateInput}
           defaultValue={actionData?.values.name}
         />
         <Input
@@ -157,7 +149,7 @@ export default function AnnounceFormExample() {
           type="email"
           label="Email"
           error={errors?.email}
-          onBlur={validate}
+          onBlur={validateInput}
           defaultValue={actionData?.values.email}
         />
         <Input
@@ -165,7 +157,7 @@ export default function AnnounceFormExample() {
           type="tel"
           label="Telefone"
           onChange={phoneMask.onChange}
-          onBlur={validate}
+          onBlur={validateInput}
           error={errors?.phone}
           defaultValue={
             actionData?.values.phone && phoneMask.mask(actionData.values.phone)
@@ -186,14 +178,13 @@ export default function AnnounceFormExample() {
 export const action: ActionFunction = async a => {
   const formData = await a.request.formData();
 
-  const payload = getAnnounceFormData(formData);
+  const { data, errors } = parseAnnounceForm(formData);
 
-  const validated = validationSchema.safeParse(payload);
-
-  if (!validated.success) {
-    const errors = getAnnounceFormErrors(validated);
-    return { values: payload, errors };
+  if (errors) {
+    return { values: data, errors };
   }
+
+  // DO SOMETHING WITH DATA
 
   return redirect('/sucesso');
 };

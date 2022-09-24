@@ -1,9 +1,43 @@
-import { SafeParseError, z } from 'zod';
+import { z } from 'zod';
 
-export const validationSchema = z.object({
-  title: z.string().refine(Boolean, { message: 'Preencha esse campo' }),
+/* REUSABLE VALIDATION FUNCTIONS */
+
+function createFormParser<T extends z.ZodObject<any>>(
+  schema: T,
+  parser: (formData: FormData) => Record<string, unknown>
+) {
+  return (formData: FormData) => {
+    const data = parser(formData);
+    const safeParse = schema.safeParse(data);
+
+    if (safeParse.success) {
+      return { data: safeParse.data };
+    }
+
+    return { data, errors: getFormErrors<z.infer<T>>(safeParse) };
+  };
+}
+
+function getFormErrors<T extends Record<string, any>>(
+  safeParse: z.SafeParseError<T>
+) {
+  type FormErrors = { [K in keyof T]?: string } & { [key: string]: string };
+
+  const errors: Record<string, string> = {};
+
+  return safeParse.error.issues.reduce((res, e) => {
+    res[e.path[0]] = e.message;
+    return res;
+  }, errors) as FormErrors;
+}
+
+/* ANNOUNCE FORM */
+
+export const announceFormSchema = z.object({
+  title: z.string().min(1, { message: 'Preencha esse campo' }),
   description: z
     .string()
+    .min(1, { message: 'Preencha esse campo' })
     .min(20, {
       message: 'Você não preencheu o mínimo de caracteres requisitados',
     })
@@ -16,32 +50,23 @@ export const validationSchema = z.object({
   images: z.array(z.instanceof(File), {
     errorMap: () => ({ message: 'Insira imagens válidas' }),
   }),
-  state: z.string().refine(Boolean, { message: 'Preencha seu estado' }),
-  city: z.string().refine(Boolean, { message: 'Preencha sua cidade' }),
+  state: z.string().min(1, { message: 'Preencha seu estado' }),
+  city: z.string().min(1, { message: 'Preencha sua cidade' }),
 
-  name: z.string().refine(Boolean, { message: 'Preencha seu nome' }),
+  name: z.string().min(1, { message: 'Preencha seu nome' }),
   email: z.string().email({ message: 'Insira um email válido' }),
-  phone: z.string().refine(Boolean, { message: 'Preencha seu telefone' }),
+  phone: z.string().min(1, { message: 'Preencha seu telefone' }),
   hide_phone: z.boolean().nullable().optional(),
 });
 
-export type AnnounceForm = z.infer<typeof validationSchema>;
+export const parseAnnounceForm = createFormParser(
+  announceFormSchema,
+  getAnnounceFromFormData
+);
 
-export function getAnnounceFormData(formData: FormData) {
+function getAnnounceFromFormData(formData: FormData) {
   let payload: Record<string, unknown> = Object.fromEntries(formData.entries());
   payload.hide_phone = payload.hide_phone === 'on';
-  payload.images = formData.getAll('images[]').filter(Boolean) as File[];
+  payload.images = formData.getAll('images[]').filter(Boolean);
   return payload;
-}
-
-export type AnnounceFormErrors = { [K in keyof AnnounceForm]?: string } & {
-  [key: string]: string;
-};
-
-export function getAnnounceFormErrors(safeParse: SafeParseError<AnnounceForm>) {
-  const errors: AnnounceFormErrors = {};
-  return safeParse.error.issues.reduce((res, e) => {
-    res[e.path[0]] = e.message;
-    return res;
-  }, errors);
 }
