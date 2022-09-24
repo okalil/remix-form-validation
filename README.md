@@ -6,6 +6,7 @@
 
 - Zod Validation Helpers
 - Custom Hook for abstracting error state handling (for better UX purposes)
+- Flexible Input Masking (with IMask)
 - Controlled Upload Files State
 
 ## Development
