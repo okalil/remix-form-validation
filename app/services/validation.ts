@@ -11,10 +11,10 @@ export type FormDataParser<T extends z.ZodObject<any>> = (
 
 function createFormParser<T extends z.ZodObject<any>>(
   schema: T,
-  parse: FormDataToRecord
+  formDataToRecord: FormDataToRecord
 ): FormDataParser<T> {
   return formData => {
-    const data = parse(formData);
+    const data = formDataToRecord(formData);
     const safeParse = schema.safeParse(data);
 
     if (safeParse.success) {
@@ -40,7 +40,7 @@ function getFormErrors<T extends Record<string, any>>(
 
 /* ANNOUNCE FORM */
 
-export const announceFormSchema = z.object({
+const announceFormSchema = z.object({
   title: z.string().min(1, { message: 'Preencha esse campo' }),
   description: z
     .string()

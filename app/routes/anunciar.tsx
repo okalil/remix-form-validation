@@ -16,7 +16,7 @@ import { Textarea } from '~/components/Textarea';
 
 import { useFilesState } from '~/hooks/useFilesState';
 import { useValidation } from '~/hooks/useValidation';
-import { announceFormSchema, parseAnnounceForm } from '~/services/validation';
+import { parseAnnounceForm } from '~/services/validation';
 import { phoneMask } from '~/utils/masks';
 
 import styles from '~/styles/anunciar.css';
