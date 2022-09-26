@@ -1,13 +1,20 @@
 import { z } from 'zod';
 
 /* REUSABLE VALIDATION FUNCTIONS */
+type FormDataToRecord = (formData: FormData) => Record<string, unknown>;
+
+export type FormDataParser<T extends z.ZodObject<any>> = (
+  formData: FormData
+) =>
+  | { data: z.infer<T>; errors: undefined }
+  | { data: Record<string, unknown>; errors: Record<string, string> };
 
 function createFormParser<T extends z.ZodObject<any>>(
   schema: T,
-  parser: (formData: FormData) => Record<string, unknown>
-) {
-  return (formData: FormData) => {
-    const data = parser(formData);
+  parse: FormDataToRecord
+): FormDataParser<T> {
+  return formData => {
+    const data = parse(formData);
     const safeParse = schema.safeParse(data);
 
     if (safeParse.success) {

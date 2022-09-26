@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { useState } from 'react';
 import type { FocusEvent, ChangeEvent, FormEventHandler } from 'react';
+import { FormDataParser } from '~/services/validation';
 
-export function useErrors<S extends z.ZodObject<any>>(
-  schema: S,
+export function useValidation<S extends z.ZodObject<any>>(
+  parseFormData: FormDataParser<S>,
   initialErrors?: { [K in keyof z.infer<S>]?: string } & Record<string, string>
 ) {
   const [errors, setErrors] = useState(initialErrors);
@@ -22,25 +23,23 @@ export function useErrors<S extends z.ZodObject<any>>(
   const validateInput = (
     e: FocusEvent<EntryElement> | ChangeEvent<EntryElement>
   ) => {
-    const input = e.currentTarget!;
+    const input = e.currentTarget;
 
-    const name = input.name as keyof z.infer<typeof schema>;
-    const parseResult = schema.shape[name]?.safeParse(input.value);
+    const formData = new FormData(input.form!);
+    const parseResult = parseFormData(formData);
 
     let message = '';
-    if (!parseResult.success) {
-      message = parseResult.error.issues[0].message;
+    if (parseResult.errors && parseResult.errors[input.name]) {
+      message = parseResult.errors[input.name];
     }
     setErrorByName(input.name, message);
   };
 
-  const validateForm: (
-    parser: (formData: FormData) => { data: any; errors?: any }
-  ) => FormEventHandler<HTMLFormElement> = parser => e => {
+  const validateForm: FormEventHandler<HTMLFormElement> = e => {
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const parseResult = parser(formData);
+    const parseResult = parseFormData(formData);
 
     if (parseResult.errors) {
       // Prevent Submit And Set Errors

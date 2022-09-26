@@ -15,7 +15,7 @@ import { Select } from '~/components/Select';
 import { Textarea } from '~/components/Textarea';
 
 import { useFilesState } from '~/hooks/useFilesState';
-import { useErrors } from '~/hooks/useErrors';
+import { useValidation } from '~/hooks/useValidation';
 import { announceFormSchema, parseAnnounceForm } from '~/services/validation';
 import { phoneMask } from '~/utils/masks';
 
@@ -30,8 +30,8 @@ export const links: LinksFunction = () => [{ href: styles, rel: 'stylesheet' }];
 export default function AnnounceFormExample() {
   const actionData = useActionData();
 
-  const { errors, validateInput, validateForm } = useErrors(
-    announceFormSchema,
+  const { errors, validateInput, validateForm } = useValidation(
+    parseAnnounceForm,
     actionData?.errors
   );
 
@@ -47,14 +47,12 @@ export default function AnnounceFormExample() {
     };
   });
 
-  const handleSubmit = validateForm(parseAnnounceForm);
-
   return (
     <Form
       ref={formRef}
       method="post"
       encType="multipart/form-data"
-      onSubmit={handleSubmit}
+      onSubmit={validateForm}
       className="form"
     >
       <h1>Anunciar</h1>
